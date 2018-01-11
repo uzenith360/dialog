@@ -1,9 +1,11 @@
 'use strict';
 
-function Dialog(header, body, footer, eventHandlers, backdropStatic, onCreate, showXbtnInheader) {
+function Dialog(header, body, footer, eventHandlers, backdropStatic, onCreate, showXbtnInheader, onClose, afterClose) {
     this._dialog;
     this._closed = false;
     this.onclose;
+    this.onClose = onClose;
+    this.afterClose = afterClose;
 
     var id = Dialog.prototype._idPrefix + Dialog.prototype._id, self;
     Dialog.prototype._id === Number.MAX_SAFE_INTEGER ? 0 : ++Dialog.prototype._id;
@@ -40,7 +42,7 @@ function Dialog(header, body, footer, eventHandlers, backdropStatic, onCreate, s
     if (eventHandlers && Object.keys(eventHandlers).length) {
         for (var suffixId in eventHandlers) {
             document.getElementById(id + 'z-dialog-' + suffixId).addEventListener(eventHandlers[suffixId][0], function (e) {
-                e['z-dialog'] = {id: id, close: self.close};
+                e['z-dialog'] = {id: id, close: self.close.bind(self)};
                 if (eventHandlers[this][1](e)) {
                     self.close();
                 }
@@ -54,12 +56,16 @@ function Dialog(header, body, footer, eventHandlers, backdropStatic, onCreate, s
 Dialog.prototype._id = 0;
 Dialog.prototype._idPrefix = '_dIaLog';
 Dialog.prototype.close = function () {
-    delete this;
-
+    this.onClose && this.onClose({_idPrefix:this._idPrefix, _id:this._id});
+    
     this.onclose && this.onclose();
 
     if (!this._closed) {
         this._closed = true;
         this._dialog.modal('hide');
     }
+    
+    this.afterClose && this.afterClose({_idPrefix:this._idPrefix, _id:this._id});
+    
+    delete this;
 };
